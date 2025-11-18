@@ -17,6 +17,9 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var timeBinder: TimerService.TimerBinder
     var isConnected = false
+    lateinit var playButton: MenuItem
+
+    var timer_val = 100
     val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
 
@@ -33,22 +36,48 @@ class MainActivity : AppCompatActivity() {
 
     val timeHandler = android.os.Handler(Looper.getMainLooper()) {
         findViewById<TextView>(R.id.textView).text = it.what.toString()
+        timer_val = it.what
         true
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main, menu)
+         menu?.run {
+            playButton = findItem(R.id.start)
+        }
         return super.onCreateOptionsMenu(menu)
     }
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+
+
         when (item.itemId) {
         R.id.start ->
             if (isConnected) {
-                timeBinder.start(100)
+                if (!timeBinder.isRunning && !timeBinder.paused) {
+                    timeBinder.start(timer_val)
+                    item.setIcon(R.drawable.pause)
+                }else if(timeBinder.isRunning && !timeBinder.paused){
+                    timeBinder.pause()
+                    item.setIcon(android.R.drawable.ic_media_play)
+                }else{
+
+                    timeBinder.start(timer_val)
+
+                }
+                //timeBinder.start(100)
+
 
         }
             R.id.stop ->
-                if (isConnected) timeBinder.stop()
+                if (isConnected) {
+                    timeBinder.stop()
+                    timer_val = 100
+
+                    playButton.setIcon(android.R.drawable.ic_media_play)
+                }
+
+
+
         }
 
 
