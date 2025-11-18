@@ -1,21 +1,87 @@
 package edu.temple.myapplication
 
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.IBinder
+import android.os.Looper
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
+import android.widget.TextView
+import java.util.logging.Handler
 
 class MainActivity : AppCompatActivity() {
+
+    lateinit var timeBinder: TimerService.TimerBinder
+    var isConnected = false
+    val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+
+            timeBinder = service as TimerService.TimerBinder
+            timeBinder.setHandler(timeHandler)
+            isConnected = true
+
+        }
+
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            isConnected = false
+        }
+    }
+
+    val timeHandler = android.os.Handler(Looper.getMainLooper()) {
+        findViewById<TextView>(R.id.textView).text = it.what.toString()
+        true
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+        R.id.start ->
+            if (isConnected) {
+                timeBinder.start(100)
+
+        }
+            R.id.stop ->
+                if (isConnected) timeBinder.stop()
+        }
+
+
+        return super.onOptionsItemSelected(item)
+
+
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById<Button>(R.id.startButton).setOnClickListener {
+        bindService(
+            Intent(this, TimerService::class.java),
+            serviceConnection,
+            BIND_AUTO_CREATE
+        )
 
-        }
-        
-        findViewById<Button>(R.id.stopButton).setOnClickListener {
+//        findViewById<Button>(R.id.startButton).setOnClickListener {
+//            if (isConnected) {
+//                timeBinder.start(100)
+//                findViewById<Button>(R.id.startButton).text = "Pause"
+//            }
+//        }
 
-        }
+//        findViewById<Button>(R.id.stopButton).setOnClickListener {
+//            if (isConnected) timeBinder.stop()
+//
+//        }
+
+    }
+    override fun onDestroy() {
+        unbindService(serviceConnection)
+        super.onDestroy()
     }
 }
